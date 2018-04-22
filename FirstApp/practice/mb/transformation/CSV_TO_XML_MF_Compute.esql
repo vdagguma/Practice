@@ -1,0 +1,39 @@
+BROKER SCHEMA practice.mb.transformation
+
+
+CREATE COMPUTE MODULE CSV_TO_XML_MF_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		 CALL CopyMessageHeaders();
+		
+		 SET OutputRoot.XMLNSC.PARTS.TITLE = 'Computer Parts';
+		 CREATE LASTCHILD OF OutputRoot.XMLNSC.PARTS NAME 'PART';
+		 DECLARE outRef REFERENCE TO OutputRoot.XMLNSC.PARTS.PART;
+		 
+		 FOR inRef AS InputRoot.DFDL.parts.record[] DO
+		 	SET outRef.ITEM = inRef.ITEM;
+		 	SET outRef.MANUFACTURER = inRef.MANUFACTURER;
+		 	SET outRef.MODEL = inRef.MODEL;
+		 	SET outRef.COST = inRef.COST;
+		 CREATE NEXTSIBLING OF outRef AS outRef REPEAT;	
+		 	
+		 END FOR;
+		 
+		 
+		 RETURN TRUE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;

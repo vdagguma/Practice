@@ -1,0 +1,70 @@
+
+
+CREATE COMPUTE MODULE Content_Routing_MF_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		   CALL CopyMessageHeaders();
+		-- CALL CopyEntireMessage();
+		SET Environment.InMsg		= InputRoot.XMLNSC;
+		DECLARE asus,ati,lg,creative INT 0;
+		FOR partRef AS InputRoot.XMLNSC.PARTS.PART[] DO
+			CASE 
+				WHEN partRef.MANUFACTURER = 'ATI' THEN
+					SET ati = ati + 1;
+				WHEN partRef.MANUFACTURER = 'ASUS' THEN
+					SET asus = asus + 1;
+				WHEN partRef.MANUFACTURER = 'LG Electronics' THEN
+					SET lg = lg + 1;
+				WHEN partRef.MANUFACTURER = 'Creative Labs' THEN
+					SET creative = creative + 1;
+			END CASE;
+		END FOR;
+		DECLARE inRef1 REFERENCE TO Environment.InMsg.PARTS.PART;
+		
+		WHILE LASTMOVE(inRef1) DO
+			IF Environment.{inRef1.MANUFACTURER} = 1 THEN
+				
+			ELSE
+				SET Environment.{inRef1.MANUFACTURER} = 0;
+			END IF;
+			SET OutputRoot.XMLNSC.PARTS.TITLE 				= Environment.InMsg.PARTS.TITLE;
+			DECLARE index INT 1;
+			DECLARE inRef REFERENCE TO Environment.InMsg.PARTS.PART;
+			WHILE LASTMOVE(inRef) DO
+				IF (inRef1.MANUFACTURER = inRef.MANUFACTURER) AND Environment.{inRef1.MANUFACTURER} = 0 THEN
+					SET OutputRoot.XMLNSC.PARTS.PART[index]	= inRef;
+					/*SET OutputRoot.XMLNSC.PARTS.PART.ITEM 			= inRef.ITEM;
+					SET OutputRoot.XMLNSC.PARTS.PART.MANUFACTURER	= inRef.MANUFACTURER;
+					SET OutputRoot.XMLNSC.PARTS.PART.MODEL			= inRef.MODEL;
+					SET OutputRoot.XMLNSC.PARTS.PART.COST			= inRef.COST;*/
+					SET index = index + 1;
+				END IF;
+					MOVE inRef NEXTSIBLING;
+			END WHILE;
+			SET Environment.{inRef1.MANUFACTURER} = Environment.{inRef1.MANUFACTURER} + 1;
+			IF Environment.{inRef1.MANUFACTURER} = 2 THEN
+				
+			ELSE
+				SET OutputLocalEnvironment.Destination.MQ.DestinationData.queueName	= UPPER(REPLACE(inRef1.MANUFACTURER,' ','')) || 'Q';
+				PROPAGATE TO TERMINAL 'out';
+			END IF; 
+			
+			MOVE inRef1 NEXTSIBLING;
+		END WHILE;
+		RETURN FALSE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER; 
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;
