@@ -4,7 +4,7 @@ CREATE FILTER MODULE Filter_MF_Filter
 	CREATE FUNCTION Main() RETURNS BOOLEAN
 	BEGIN
 --		DECLARE 
-		IF Root.XMLNSC.student.gender = 'male' THEN
+		IF Root.XMLNSC.student.gender = 'males' THEN
 			RETURN TRUE; 
 		ELSEIF Root.XMLNSC.student.gender = 'female' THEN
 			RETURN FALSE; 
