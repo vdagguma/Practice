@@ -4,7 +4,7 @@ CREATE COMPUTE MODULE Content_Routing_MF_Compute
 	CREATE FUNCTION Main() RETURNS BOOLEAN
 	BEGIN
 		   CALL CopyMessageHeaders();
-		-- CALL CopyEntireMessage();
+		 CALL CopyEntireMessage();
 		SET Environment.InMsg		= InputRoot.XMLNSC;
 		DECLARE asus,ati,lg,creative INT 0;
 		FOR partRef AS InputRoot.XMLNSC.PARTS.PART[] DO
